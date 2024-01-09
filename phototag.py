@@ -13,16 +13,17 @@ def get_existing_subject(image_path):
     metadata = et.get_metadata(image_path)
     for d in metadata:
       try:
-        #print('d["XMP:Subject"] is: ', type(d["XMP:Subject"]))
         if not type(d["XMP:Subject"]) is list:
-          #print('d["XMP:Subject"] is a string.  Converting to list.')
-          d["XMP:Subject"] = d["XMP:Subject"].split()
+          d["XMP:Subject"] = d["XMP:Subject"].split(",")
         for s in d["XMP:Subject"]:
-          #print('s is: ', type(s))
+          s = s.replace("'", "")
+          s = s.replace("[", "")
+          s = s.replace("]", "")
+          print('s value: ', s)
           fd.append(s)
       except KeyError:
         print("No existing XMP:Subject tag in file: Adding XMP:Subject from AI predictions")
-  print("Existing XMP:Subject tags: ", str(fd))
+  print("Existing XMP:Subject tags: ", fd)
   return fd
 
 # Get AI predictions
@@ -62,6 +63,8 @@ file_data = list(filter(None, file_data))
 file_data = list(filter(str.strip, file_data))
 # Remove leading and trailing whitespace within elements of the list
 file_data = [x.strip() for x in file_data]
+# Remove ' characters
+file_data = [x.replace("'", "") for x in file_data]
 
 # Get AI predictions and put into pred_data
 pred_data = get_ai_predictions(img)
@@ -76,37 +79,20 @@ pred_data = list(filter(str.strip, pred_data))
 # Remove leading and trailing whitespace within elements of the list
 pred_data = [x.strip() for x in pred_data]
 
-# Combine AI and existing tags
-# subject = file_data + pred_data
-# Sort and Unique subject
-# subject = sorted(set(subject))
-# Remove duplicates
-# subject = list(dict.fromkeys(subject))
-# Remove empty elements
-# subject = list(filter(None, subject))
-# Remove elements with only whitespace
-# subject = list(filter(str.strip, subject))
-# Remove leading and trailing whitespace within elements of the list
-# subject = [x.strip() for x in subject]
-# Compare subject to file_data
-subject = []
+subject = file_data
 write_xmp = False
-for f in file_data:
-  if f not in subject:
-    print("New file tag found: ", f)
-    print("%s not in %s" % (f, subject))
-    subject.append(f)
-    write_xmp = True
-    # break
 for p in pred_data:
   if p not in subject:
     print("New ai tag found: ", p)
-    print("%s not in %s" % (p, subject))
     subject.append(p)
     write_xmp = True
-print('Subject: ', subject)
-print('File data: ', file_data)
-print('Pred data: ', pred_data)
+strSubject = ', '.join(subject)
+print('Initial Subject String: ', strSubject)
+# Remove list brackets and ' characters
+strSubject = strSubject.replace("'", "")
+strSubject = strSubject.replace("[", "")
+strSubject = strSubject.replace("]", "")
+print('Processed Subject String: ', strSubject)
 if write_xmp:
   # Write XMP:Subject to file
   write_xmp_subject(img, subject)
