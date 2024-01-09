@@ -22,6 +22,7 @@ def get_existing_subject(image_path):
           fd.append(s)
       except KeyError:
         print("No existing XMP:Subject tag in file: Adding XMP:Subject from AI predictions")
+  print("Existing XMP:Subject tags: ", str(fd))
   return fd
 
 # Get AI predictions
@@ -51,15 +52,55 @@ def write_xmp_subject(file_path, subject_data):
 img = sys.argv[1]
 # Get existing Subject EXIF and put into file_data
 file_data = get_existing_subject(img)
+# Sort and Unique file_data
+file_data = sorted(set(file_data))
+# Remove duplicates
+file_data = list(dict.fromkeys(file_data))
+# Remove empty elements
+file_data = list(filter(None, file_data))
+# Remove elements with only whitespace
+file_data = list(filter(str.strip, file_data))
+# Remove leading and trailing whitespace within elements of the list
+file_data = [x.strip() for x in file_data]
+
 # Get AI predictions and put into pred_data
 pred_data = get_ai_predictions(img)
-
+# Sort and Unique pred_data
+pred_data = sorted(set(pred_data))
+# Remove duplicates
+pred_data = list(dict.fromkeys(pred_data))
+# Remove empty elements
+pred_data = list(filter(None, pred_data))
+# Remove elements with only whitespace
+pred_data = list(filter(str.strip, pred_data))
+# Remove leading and trailing whitespace within elements of the list
+pred_data = [x.strip() for x in pred_data]
 
 # Combine AI and existing tags
 subject = file_data + pred_data
+# Sort and Unique subject
+subject = sorted(set(subject))
+# Remove duplicates
+subject = list(dict.fromkeys(subject))
+# Remove empty elements
+subject = list(filter(None, subject))
+# Remove elements with only whitespace
+subject = list(filter(str.strip, subject))
 # Remove leading and trailing whitespace within elements of the list
 subject = [x.strip() for x in subject]
+# Compare subject to file_data
+write_xmp = False
+for s in subject:
+  if s not in file_data:
+    print("New tag found: ", s)
+    print("%s not in %s" % (s, file_data))
+    write_xmp = True
+    break
 print('Subject: ', subject)
-
-# Write XMP:Subject to file
-write_xmp_subject(img, subject)
+print('File data: ', file_data)
+print('Pred data: ', pred_data)
+if write_xmp:
+  # Write XMP:Subject to file
+  write_xmp_subject(img, subject)
+else:
+  print("No new tags to add")

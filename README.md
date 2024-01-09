@@ -5,3 +5,7 @@ This is currently not ready for use
 
 This code uses huggyface.  To get started with huggyface see this link.
 https://huggingface.co/docs/transformers/installation
+
+To run
+1. Create and activate the python venv as described in the link above
+2. ./phototag.py <path to image>
