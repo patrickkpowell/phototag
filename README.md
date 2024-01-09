@@ -8,4 +8,4 @@ https://huggingface.co/docs/transformers/installation
 
 To run
 1. Create and activate the python venv as described in the link above
-2. ./phototag.py [image]
+2. ./phototag.py [image file]
