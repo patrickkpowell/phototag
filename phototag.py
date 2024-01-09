@@ -70,6 +70,26 @@ def write_xmp_subject(file_path, subject_data):
     with exiftool.ExifTool() as et:
         et.execute(f'-XMP:Subject={subject_data}', file_path)
 
+# Build new Subject String
+def build_subject(fd, pd):
+  # Create subject list from file_data
+  s = fd
+  # Set write flag
+  write_flag = False
+  # Loop through pred_data and add to subject list if not already there
+  for p in pd:
+    if p not in s:
+      print("New ai tag found: ", p)
+      s.append(p)
+      # Set write flag
+      write_flag = True
+  # Convert subject list to string
+  strSub = ', '.join(s)
+  # Remove list brackets and ' characters
+  strSub = strSub.replace("'", "")
+  strSub = strSub.replace("[", "")
+  strSub = strSub.replace("]", "")
+  return strSub, write_flag
 
 # Process args
 # TODO: Add  handling for args
@@ -81,27 +101,15 @@ file_data = get_existing_subject(img)
 # Get AI predictions and put into pred_data
 pred_data = get_ai_predictions(img)
 
-# Build new Subject String
-# Create subject list from file_data
-subject = file_data
 # Set write flag
 write_xmp = False
-# Loop through pred_data and add to subject list if not already there
-for p in pred_data:
-  if p not in subject:
-    print("New ai tag found: ", p)
-    subject.append(p)
-    # Set write flag
-    write_xmp = True
-# Convert subject list to string
-strSubject = ', '.join(subject)
-# Remove list brackets and ' characters
-strSubject = strSubject.replace("'", "")
-strSubject = strSubject.replace("[", "")
-strSubject = strSubject.replace("]", "")
+
+# Build new Subject String
+strSubject, write_xmp = build_subject(file_data, pred_data)
+print(write_xmp)
 # Write new Subject String to file if write flag is set
 if write_xmp:
-  write_xmp_subject(img, subject)
+  write_xmp_subject(img, strSubject)
   print("New tags written")
 else:
   print("No new tags to add")
