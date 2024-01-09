@@ -77,25 +77,33 @@ pred_data = list(filter(str.strip, pred_data))
 pred_data = [x.strip() for x in pred_data]
 
 # Combine AI and existing tags
-subject = file_data + pred_data
+# subject = file_data + pred_data
 # Sort and Unique subject
-subject = sorted(set(subject))
+# subject = sorted(set(subject))
 # Remove duplicates
-subject = list(dict.fromkeys(subject))
+# subject = list(dict.fromkeys(subject))
 # Remove empty elements
-subject = list(filter(None, subject))
+# subject = list(filter(None, subject))
 # Remove elements with only whitespace
-subject = list(filter(str.strip, subject))
+# subject = list(filter(str.strip, subject))
 # Remove leading and trailing whitespace within elements of the list
-subject = [x.strip() for x in subject]
+# subject = [x.strip() for x in subject]
 # Compare subject to file_data
+subject = []
 write_xmp = False
-for s in subject:
-  if s not in file_data:
-    print("New tag found: ", s)
-    print("%s not in %s" % (s, file_data))
+for f in file_data:
+  if f not in subject:
+    print("New file tag found: ", f)
+    subject.append(f)
+    # print("%s not in %s" % (s, file_data))
     write_xmp = True
-    break
+    # break
+for p in pred_data:
+  if p not in subject:
+    print("New ai tag found: ", p)
+    subject.append(p)
+    # print("%s not in %s" % (s, pred_data))
+    write_xmp = True
 print('Subject: ', subject)
 print('File data: ', file_data)
 print('Pred data: ', pred_data)
