@@ -94,15 +94,15 @@ write_xmp = False
 for f in file_data:
   if f not in subject:
     print("New file tag found: ", f)
+    print("%s not in %s" % (f, subject))
     subject.append(f)
-    # print("%s not in %s" % (s, file_data))
     write_xmp = True
     # break
 for p in pred_data:
   if p not in subject:
     print("New ai tag found: ", p)
+    print("%s not in %s" % (p, subject))
     subject.append(p)
-    # print("%s not in %s" % (s, pred_data))
     write_xmp = True
 print('Subject: ', subject)
 print('File data: ', file_data)
