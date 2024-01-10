@@ -1,6 +1,7 @@
 #!/Users/ppowell/Documents/huggyface/.env/bin/python
 
 import sys
+import os
 import exiftool
 
 print("Importing huggyface pipeline")
@@ -58,6 +59,8 @@ def get_ai_predictions(image_path):
   pd = list(filter(str.strip, pd))
   # Remove leading and trailing whitespace within elements of the list
   pd = [x.strip() for x in pd]
+  # Remove ' characters
+  pd = [x.replace("'", "") for x in pd]
   return pd
 
 # Write XMP:Subject to file
@@ -91,25 +94,43 @@ def build_subject(fd, pd):
   strSub = strSub.replace("]", "")
   return strSub, write_flag
 
+# Write new Subject String to file if write flag is set
+def write_xmp_subject(fp, sd):
+    # Ensure subject_data is a string
+    if not isinstance(sd, str):
+        subject_data = str(sd)
+
+    # Set the XMP:Subject tag
+    with exiftool.ExifTool() as et:
+        et.execute(f'-XMP:Subject={sd}', fp)
+
 # Process args
 # TODO: Add  handling for args
-img = sys.argv[1]
+directory = sys.argv[1]
+for filename in os.listdir(directory):
+  if filename.endswith(".jpg") or filename.endswith(".JPG"):
+    img = os.path.join(directory, filename)
+    print("Processing file: ", img)
+    # Get existing Subject EXIF and put into file_data
+    file_data = get_existing_subject(img)
+    
+    # Get AI predictions and put into pred_data
+    pred_data = get_ai_predictions(img)
+    
+    # Set write flag
+    write_xmp = False
+    
+    # Build new Subject String
+    strSubject, write_xmp = build_subject(file_data, pred_data)
+    
+    # Write new Subject String to file if write flag is set
+    if write_xmp:
+      write_xmp_subject(img, strSubject)
+      print("New tags written")
+    else:
+      print("No new tags to add")
+  else:
+    continue
 
-# Get existing Subject EXIF and put into file_data
-file_data = get_existing_subject(img)
+# img = sys.argv[1]
 
-# Get AI predictions and put into pred_data
-pred_data = get_ai_predictions(img)
-
-# Set write flag
-write_xmp = False
-
-# Build new Subject String
-strSubject, write_xmp = build_subject(file_data, pred_data)
-print(write_xmp)
-# Write new Subject String to file if write flag is set
-if write_xmp:
-  write_xmp_subject(img, strSubject)
-  print("New tags written")
-else:
-  print("No new tags to add")
