@@ -3,9 +3,11 @@
 import sys
 import os
 import exiftool
+import torch
+from PIL import Image
 
 print("Importing huggyface pipeline")
-from transformers import pipeline
+from transformers import pipeline, DetrImageProcessor, DetrForObjectDetection
 
 # Get any existing Subject EXIF and put into file_data
 def get_existing_subject(image_path):
@@ -41,26 +43,48 @@ def get_existing_subject(image_path):
 
 # Get AI predictions
 def get_ai_predictions(image_path):
-  vc = pipeline(model="google/vit-base-patch16-224")
-  preds = vc(images=image_path)
+  models = []
+  print("Gooogle AI")
+  google_vc = pipeline(model="google/vit-base-patch16-224")#, task="zero-shot-object-detection")
+  google_preds = google_vc(images=image_path)#, candidate_labels=['human face','car','gown','Toyota Land Cruiser'])
+  models.append(google_preds)
+
+  print("Facebook AI")
+  processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50", revision="no_timm")
+  model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50", revision="no_timm")
+  image = Image.open(img)
+  inputs = processor(images=image, return_tensors="pt")
+  outputs = model(**inputs)
+  # convert outputs (bounding boxes and class logits) to COCO API
+  # let's only keep detections with score > 0.9
+  target_sizes = torch.tensor([image.size[::-1]])
+  results = processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.9)[0]
+
+  for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+      box = [round(i, 2) for i in box.tolist()]
+      print(
+              f"Detected {model.config.id2label[label.item()]} with confidence "
+              f"{round(score.item(), 3)} at location {box}"
+      )
+
   # Put AI predictions in pred_data list
   pd = []
-  #image_path = "with-metadata/{}".format(img)
-  for p in preds:
-    for e in p["label"].split(","):
-      pd.append(e)
-  # Sort and Unique pred_data
-  pd = sorted(set(pd))
-  # Remove duplicates
-  pd = list(dict.fromkeys(pd))
-  # Remove empty elements
-  pd = list(filter(None, pd))
-  # Remove elements with only whitespace
-  pd = list(filter(str.strip, pd))
-  # Remove leading and trailing whitespace within elements of the list
-  pd = [x.strip() for x in pd]
-  # Remove ' characters
-  pd = [x.replace("'", "") for x in pd]
+  for model in models:
+    for p in model:
+      for e in p["label"].split(","):
+        pd.append(e)
+    # Sort and Unique pred_data
+    pd = sorted(set(pd))
+    # Remove duplicates
+    pd = list(dict.fromkeys(pd))
+    # Remove empty elements
+    pd = list(filter(None, pd))
+    # Remove elements with only whitespace
+    pd = list(filter(str.strip, pd))
+    # Remove leading and trailing whitespace within elements of the list
+    pd = [x.strip() for x in pd]
+    # Remove ' characters
+    pd = [x.replace("'", "") for x in pd]
   return pd
 
 # Write XMP:Subject to file
@@ -125,8 +149,8 @@ for filename in os.listdir(directory):
     
     # Write new Subject String to file if write flag is set
     if write_xmp:
+      image_path = "with-metadata/{}".format(img)
       write_xmp_subject(img, strSubject)
-      print("New tags written")
     else:
       print("No new tags to add")
   else:
