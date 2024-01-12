@@ -161,3 +161,4 @@ cython_debug/
 
 images/
 scratch
+ai_processed/
